@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { contactAPI } from '../services/api'
 import { ContactList } from '../types/contact'
+import LoadingSpinner from '../components/LoadingSpinner'
 
 export default function Contacts() {
   const navigate = useNavigate()
@@ -14,6 +15,7 @@ export default function Contacts() {
   const loadContacts = async () => {
     try {
       setLoading(true)
+      setError(null)
       const params: any = {}
       
       if (searchTerm) {
@@ -26,16 +28,22 @@ export default function Contacts() {
       
       const data = await contactAPI.list(params)
       setContacts(data)
-      setError(null)
     } catch (err: any) {
+      console.error('Error loading contacts:', err)
       setError(err.response?.data?.detail || 'Fehler beim Laden der Kontakte')
+      setContacts([]) // Clear contacts on error
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    loadContacts()
+    // Debounce search to avoid too many requests
+    const timeoutId = setTimeout(() => {
+      loadContacts()
+    }, 300)
+
+    return () => clearTimeout(timeoutId)
   }, [searchTerm, filterType])
 
   const handleDelete = async (id: number) => {
@@ -72,11 +80,7 @@ export default function Contacts() {
   }
 
   if (loading && contacts.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    )
+    return <LoadingSpinner message="Kontakte werden geladen..." />
   }
 
   return (

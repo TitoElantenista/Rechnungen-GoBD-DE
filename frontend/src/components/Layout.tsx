@@ -1,5 +1,6 @@
 import { Outlet, NavLink } from 'react-router-dom'
 import { DocumentTextIcon, HomeIcon, UserGroupIcon } from '@heroicons/react/24/outline'
+import ErrorBoundary from './ErrorBoundary'
 
 export default function Layout() {
   return (
@@ -78,7 +79,9 @@ export default function Layout() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Outlet />
+        <ErrorBoundary>
+          <Outlet />
+        </ErrorBoundary>
       </main>
 
       {/* Footer */}

@@ -35,9 +35,11 @@ export default function ContactForm() {
   const loadContact = async (contactId: number) => {
     try {
       setLoading(true)
+      setError(null)
       const contact = await contactAPI.get(contactId)
       setFormData(contact)
     } catch (err: any) {
+      console.error('Error loading contact:', err)
       setError(err.response?.data?.detail || 'Fehler beim Laden des Kontakts')
     } finally {
       setLoading(false)

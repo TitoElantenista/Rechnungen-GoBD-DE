@@ -7,6 +7,7 @@ export const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 30000, // 30 segundos de timeout
 })
 
 // Request interceptor to add auth token
@@ -27,10 +28,29 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Log error for debugging
+    console.error('API Error:', {
+      url: error.config?.url,
+      method: error.config?.method,
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message
+    })
+
+    // Handle specific error cases
+    if (error.code === 'ECONNABORTED') {
+      console.error('Request timeout - server took too long to respond')
+    }
+
+    if (!error.response) {
+      console.error('Network error - could not connect to server')
+    }
+
     if (error.response?.status === 401) {
       localStorage.removeItem('token')
       window.location.href = '/login'
     }
+    
     return Promise.reject(error)
   }
 )

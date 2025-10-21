@@ -27,10 +27,13 @@ export default function InvoiceList() {
   const loadInvoices = async () => {
     try {
       setLoading(true)
+      setError(null)
       const data = await invoiceAPI.list()
       setInvoices(data)
     } catch (err: any) {
+      console.error('Error loading invoices:', err)
       setError('Fehler beim Laden der Rechnungen')
+      setInvoices([]) // Clear invoices on error
     } finally {
       setLoading(false)
     }

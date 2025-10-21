@@ -66,10 +66,13 @@ export default function InvoiceDetail() {
   const loadInvoice = async (invoiceId: number) => {
     try {
       setLoading(true)
+      setError(null)
       const data = await invoiceAPI.get(invoiceId)
       setInvoice(data)
     } catch (err: any) {
+      console.error('Error loading invoice:', err)
       setError('Fehler beim Laden der Rechnung')
+      setInvoice(null)
     } finally {
       setLoading(false)
     }

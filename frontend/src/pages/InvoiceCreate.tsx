@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { api } from '../services/api'
+import { api, contactAPI } from '../services/api'
+import type { ContactList, Contact } from '../types/contact'
+import { extractErrorMessage } from '../utils/error'
 
 interface LineItem {
   description: string
@@ -45,6 +47,11 @@ export default function InvoiceCreate() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [contacts, setContacts] = useState<ContactList[]>([])
+  const [contactsLoaded, setContactsLoaded] = useState(false)
+  const [contactsLoading, setContactsLoading] = useState(false)
+  const [contactsError, setContactsError] = useState<string | null>(null)
+  const [showContactPicker, setShowContactPicker] = useState(false)
 
   const today = new Date().toISOString().split('T')[0]
 
@@ -93,12 +100,100 @@ export default function InvoiceCreate() {
     setError(null)
 
     try {
-      const response = await api.post('/api/invoices', formData)
+      const toDateTime = (value?: string) => {
+        if (!value) return undefined
+        return `${value}T00:00:00`
+      }
+
+      const optional = (value?: string) => {
+        if (value === undefined || value === null) return undefined
+        const trimmed = value.trim()
+        return trimmed.length > 0 ? trimmed : undefined
+      }
+
+      const payload = {
+        ...formData,
+        seller: {
+          ...formData.seller,
+          email: optional(formData.seller.email),
+          phone: optional(formData.seller.phone)
+        },
+        buyer: {
+          ...formData.buyer,
+          tax_id: optional(formData.buyer.tax_id),
+          email: optional(formData.buyer.email),
+          phone: optional(formData.buyer.phone)
+        },
+        notes: optional(formData.notes),
+        payment_terms: optional(formData.payment_terms),
+        issue_date: toDateTime(formData.issue_date),
+        delivery_date_start: toDateTime(formData.delivery_date_start),
+        delivery_date_end: toDateTime(formData.delivery_date_end),
+        line_items: formData.line_items.map((item) => ({
+          ...item,
+          description: item.description.trim(),
+          quantity: Number(item.quantity),
+          unit_price: Number(item.unit_price),
+          tax_rate: Number(item.tax_rate)
+        }))
+      }
+
+      const response = await api.post('/api/invoices', payload)
       navigate(`/invoices/${response.data.id}`)
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Fehler beim Erstellen der Rechnung')
+      setError(extractErrorMessage(err, 'Fehler beim Erstellen der Rechnung'))
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleToggleContactPicker = async () => {
+    setContactsError(null)
+    if (!contactsLoaded) {
+      setContactsLoading(true)
+      try {
+        const data = await contactAPI.list()
+        setContacts(data)
+        setContactsLoaded(true)
+        setShowContactPicker(true)
+      } catch (err: any) {
+        setContactsError(extractErrorMessage(err, 'Kontakte konnten nicht geladen werden'))
+      } finally {
+        setContactsLoading(false)
+      }
+    } else {
+      setShowContactPicker((prev) => !prev)
+    }
+  }
+
+  const handleSelectContact = async (contactId: string) => {
+    if (!contactId) return
+    setContactsError(null)
+    setContactsLoading(true)
+    try {
+      const contact: Contact = await contactAPI.get(Number(contactId))
+      const buyerName = contact.company_name && contact.contact_person
+        ? `${contact.company_name} (${contact.contact_person})`
+        : contact.company_name || contact.contact_person || ''
+      
+      setFormData((prev) => ({
+        ...prev,
+        buyer: {
+          ...prev.buyer,
+          name: buyerName,
+          street: contact.street || '',
+          zip: contact.zip_code || '',
+          city: contact.city || '',
+          country: contact.country || 'DE',
+          tax_id: contact.tax_id || '',
+          email: contact.email || '',
+          phone: contact.phone || ''
+        }
+      }))
+    } catch (err: any) {
+      setContactsError(extractErrorMessage(err, 'Kontakt konnte nicht geladen werden'))
+    } finally {
+      setContactsLoading(false)
     }
   }
 
@@ -268,7 +363,58 @@ export default function InvoiceCreate() {
 
         {/* Käufer */}
         <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold mb-4 text-gray-900">Käufer (Rechnungsempfänger)</h2>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+            <h2 className="text-xl font-semibold text-gray-900">Käufer (Rechnungsempfänger)</h2>
+            <button
+              type="button"
+              onClick={handleToggleContactPicker}
+              className="self-start md:self-auto text-sm text-blue-600 hover:text-blue-800 font-medium"
+            >
+              {contactsLoading
+                ? 'Kontakte werden geladen...'
+                : showContactPicker
+                  ? 'Kontaktliste verbergen'
+                  : 'Kontaktdaten importieren'}
+            </button>
+          </div>
+
+          {contactsError && (
+            <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">
+              {contactsError}
+            </div>
+          )}
+
+          {showContactPicker && (
+            <div className="mb-4 flex flex-col sm:flex-row sm:items-center gap-3">
+              <select
+                className="w-full sm:w-auto flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                defaultValue=""
+                onChange={(e) => handleSelectContact(e.target.value)}
+                disabled={contactsLoading || contacts.length === 0}
+              >
+                <option value="">Kontakt auswählen…</option>
+                {contacts.map((contact) => {
+                  const label = contact.company_name && contact.contact_person
+                    ? `${contact.company_name} (${contact.contact_person})`
+                    : contact.company_name || contact.contact_person || `Kontakt #${contact.id}`
+                  return (
+                    <option key={contact.id} value={contact.id}>
+                      {label}
+                    </option>
+                  )
+                })}
+              </select>
+              {contactsLoading && (
+                <span className="text-sm text-gray-500">Lädt…</span>
+              )}
+            </div>
+          )}
+          {showContactPicker && !contactsLoading && contacts.length === 0 && !contactsError && (
+            <p className="mb-4 text-sm text-gray-500">
+              Es sind noch keine Kontakte vorhanden.
+            </p>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">

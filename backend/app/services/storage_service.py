@@ -27,6 +27,8 @@ class StorageService:
         self.use_local = False
         self.local_storage_path = Path("./storage")
         
+        self.bucket = settings.S3_BUCKET
+        
         try:
             self.s3_client = boto3.client(
                 's3',
@@ -35,7 +37,12 @@ class StorageService:
                 aws_secret_access_key=settings.S3_SECRET_KEY,
                 region_name=settings.S3_REGION,
                 use_ssl=settings.S3_USE_SSL,
-                config=Config(signature_version='s3v4'),
+                config=Config(
+                    signature_version='s3v4',
+                    connect_timeout=2,
+                    read_timeout=2,
+                    retries={'max_attempts': 1, 'mode': 'standard'},
+                ),
             )
             self.bucket = settings.S3_BUCKET
             
@@ -48,6 +55,10 @@ class StorageService:
         except Exception as e:
             print(f"⚠️ S3 not available, using local storage: {e}")
             self.use_local = True
+            self.s3_client = None
+            self.bucket = None
+        
+        if self.use_local:
             self.local_storage_path.mkdir(parents=True, exist_ok=True)
     
     def _ensure_bucket_exists(self):

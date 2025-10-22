@@ -182,26 +182,11 @@ export default function InvoiceDetail() {
       </div>
 
       {/* Rechnungsinformationen */}
-      <div className="grid grid-cols-2 gap-6 mb-6">
-        {/* Verkäufer */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-lg font-semibold mb-4 text-gray-900">Rechnungssteller</h2>
-          <div className="space-y-1 text-sm">
-            <p className="font-semibold">{invoice.seller_name}</p>
-            <p>{invoice.seller_street}</p>
-            <p>{invoice.seller_zip} {invoice.seller_city}</p>
-            <p>{invoice.seller_country}</p>
-            <p className="pt-2">USt-IdNr: {invoice.seller_tax_id}</p>
-            {invoice.seller_email && <p>E-Mail: {invoice.seller_email}</p>}
-            {invoice.seller_phone && <p>Tel: {invoice.seller_phone}</p>}
-          </div>
-        </div>
-
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         {/* Käufer */}
         <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-lg font-semibold mb-4 text-gray-900">Rechnungsempfänger</h2>
-          <div className="space-y-1 text-sm">
-            <p className="font-semibold">{invoice.buyer_name}</p>
+          <div className="space-y-1 text-sm text-left">
+            <p className="font-semibold text-gray-900">{invoice.buyer_name}</p>
             <p>{invoice.buyer_street}</p>
             <p>{invoice.buyer_zip} {invoice.buyer_city}</p>
             <p>{invoice.buyer_country}</p>
@@ -210,22 +195,40 @@ export default function InvoiceDetail() {
             {invoice.buyer_phone && <p>Tel: {invoice.buyer_phone}</p>}
           </div>
         </div>
+
+        {/* Verkäufer */}
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h2 className="text-lg font-semibold mb-4 text-gray-900 text-left">Rechnungssteller</h2>
+          <div className="space-y-1 text-sm text-left">
+            <p className="font-semibold text-gray-900">{invoice.seller_name}</p>
+            <p>{invoice.seller_street}</p>
+            <p>{invoice.seller_zip} {invoice.seller_city}</p>
+            <p>{invoice.seller_country}</p>
+            <p className="pt-2">USt-IdNr: {invoice.seller_tax_id}</p>
+            {invoice.seller_email && <p>E-Mail: {invoice.seller_email}</p>}
+            {invoice.seller_phone && <p>Tel: {invoice.seller_phone}</p>}
+          </div>
+        </div>
       </div>
 
       {/* Rechnungsdaten */}
       <div className="bg-white p-6 rounded-lg shadow mb-6">
         <h2 className="text-lg font-semibold mb-4 text-gray-900">Rechnungsdaten</h2>
-        <div className="grid grid-cols-3 gap-4 text-sm">
-          <div>
-            <p className="text-gray-600">Rechnungsdatum:</p>
-            <p className="font-semibold">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm text-left">
+          <div className="space-y-1">
+            <p className="text-gray-600">Rechnungsnummer</p>
+            <p className="font-semibold text-gray-900">{invoice.invoice_number}</p>
+          </div>
+          <div className="space-y-1">
+            <p className="text-gray-600">Rechnungsdatum</p>
+            <p className="font-semibold text-gray-900">
               {new Date(invoice.issue_date).toLocaleDateString('de-DE')}
             </p>
           </div>
           {invoice.delivery_date_start && (
-            <div>
-              <p className="text-gray-600">Lieferdatum:</p>
-              <p className="font-semibold">
+            <div className="space-y-1">
+              <p className="text-gray-600">Lieferdatum</p>
+              <p className="font-semibold text-gray-900">
                 {new Date(invoice.delivery_date_start).toLocaleDateString('de-DE')}
                 {invoice.delivery_date_end && invoice.delivery_date_end !== invoice.delivery_date_start && 
                   ` - ${new Date(invoice.delivery_date_end).toLocaleDateString('de-DE')}`
@@ -233,10 +236,6 @@ export default function InvoiceDetail() {
               </p>
             </div>
           )}
-          <div>
-            <p className="text-gray-600">Währung:</p>
-            <p className="font-semibold">{invoice.currency}</p>
-          </div>
         </div>
       </div>
 

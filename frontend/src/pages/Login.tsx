@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { authAPI } from '../services/api'
+import { extractErrorMessage } from '../utils/error'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -19,7 +20,7 @@ export default function Login() {
       localStorage.setItem('token', response.access_token)
       navigate('/')
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Anmeldung fehlgeschlagen')
+      setError(extractErrorMessage(err, 'Anmeldung fehlgeschlagen'))
     } finally {
       setLoading(false)
     }

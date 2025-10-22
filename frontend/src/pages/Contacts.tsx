@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { contactAPI } from '../services/api'
 import { ContactList } from '../types/contact'
 import LoadingSpinner from '../components/LoadingSpinner'
+import { extractErrorMessage } from '../utils/error'
 
 export default function Contacts() {
   const navigate = useNavigate()
@@ -30,7 +31,7 @@ export default function Contacts() {
       setContacts(data)
     } catch (err: any) {
       console.error('Error loading contacts:', err)
-      setError(err.response?.data?.detail || 'Fehler beim Laden der Kontakte')
+      setError(extractErrorMessage(err, 'Fehler beim Laden der Kontakte'))
       setContacts([]) // Clear contacts on error
     } finally {
       setLoading(false)
@@ -55,7 +56,7 @@ export default function Contacts() {
       await contactAPI.delete(id)
       loadContacts()
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Fehler beim Löschen des Kontakts')
+      setError(extractErrorMessage(err, 'Fehler beim Löschen des Kontakts'))
     }
   }
 

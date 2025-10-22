@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { contactAPI } from '../services/api'
+import { extractErrorMessage } from '../utils/error'
 import { ContactCreate } from '../types/contact'
 
 export default function ContactForm() {
@@ -40,7 +41,7 @@ export default function ContactForm() {
       setFormData(contact)
     } catch (err: any) {
       console.error('Error loading contact:', err)
-      setError(err.response?.data?.detail || 'Fehler beim Laden des Kontakts')
+      setError(extractErrorMessage(err, 'Fehler beim Laden des Kontakts'))
     } finally {
       setLoading(false)
     }
@@ -59,7 +60,7 @@ export default function ContactForm() {
       }
       navigate('/contacts')
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Fehler beim Speichern des Kontakts')
+      setError(extractErrorMessage(err, 'Fehler beim Speichern des Kontakts'))
     } finally {
       setLoading(false)
     }

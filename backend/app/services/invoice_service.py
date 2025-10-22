@@ -7,6 +7,7 @@ from io import BytesIO
 from pathlib import Path
 from typing import BinaryIO
 from zipfile import ZipFile
+from functools import lru_cache
 
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -20,6 +21,12 @@ from app.services.signature_service import SignatureService
 from app.services.storage_service import StorageService
 
 
+@lru_cache(maxsize=1)
+def get_storage_service() -> StorageService:
+    """Return a shared storage service instance (avoids repeated S3 handshakes)."""
+    return StorageService()
+
+
 class InvoiceService:
     """Service for invoice operations"""
     
@@ -28,7 +35,7 @@ class InvoiceService:
         self.zugferd_gen = ZUGFeRDGenerator()
         self.pdf_gen = PDFGenerator()
         self.signature_service = SignatureService()
-        self.storage_service = StorageService()
+        self.storage_service = get_storage_service()
     
     async def create_invoice(self, invoice_data: InvoiceCreate, user_id: int) -> Invoice:
         """

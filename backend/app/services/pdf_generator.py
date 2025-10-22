@@ -86,34 +86,42 @@ class PDFGenerator:
         story.append(Paragraph(f"Rechnung {invoice_number}", title_style))
         story.append(Spacer(1, 10*mm))
         
-        # Seller and Buyer side by side
-        seller_buyer_data = [
-            [
-                Paragraph(f"<b>Rechnungssteller:</b><br/>{seller.name}<br/>{seller.street}<br/>{seller.zip} {seller.city}<br/>{seller.country}<br/>USt-IdNr: {seller.tax_id}", styles['Normal']),
-                Paragraph(f"<b>Rechnungsempfänger:</b><br/>{buyer.name}<br/>{buyer.street}<br/>{buyer.zip} {buyer.city}<br/>{buyer.country}" + (f"<br/>USt-IdNr: {buyer.tax_id}" if buyer.tax_id else ""), styles['Normal']),
-            ]
-        ]
-        
-        seller_buyer_table = Table(seller_buyer_data, colWidths=[90*mm, 90*mm])
+        # Buyer (left) and seller (right)
+        buyer_block = Paragraph(
+            f"{buyer.name}<br/>{buyer.street}<br/>{buyer.zip} {buyer.city}<br/>{buyer.country}"
+            + (f"<br/>USt-IdNr: {buyer.tax_id}" if buyer.tax_id else ""),
+            styles['Normal']
+        )
+        seller_block = Paragraph(
+            f"<b>Rechnungssteller:</b><br/>{seller.name}<br/>{seller.street}<br/>{seller.zip} {seller.city}<br/>{seller.country}<br/>USt-IdNr: {seller.tax_id}",
+            styles['Normal']
+        )
+        seller_buyer_table = Table([[buyer_block, seller_block]], colWidths=[90*mm, 90*mm])
+        seller_buyer_table.hAlign = 'LEFT'
         seller_buyer_table.setStyle(TableStyle([
             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
             ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 12),
         ]))
         story.append(seller_buyer_table)
         story.append(Spacer(1, 10*mm))
         
         # Invoice details
         details_data = [
-            ['Rechnungsnummer:', invoice_number],
-            ['Rechnungsdatum:', issue_date.strftime('%d.%m.%Y')],
-            ['Währung:', currency],
+            ['Rechnungsnummer', invoice_number],
+            ['Rechnungsdatum', issue_date.strftime('%d.%m.%Y')],
         ]
         
-        details_table = Table(details_data, colWidths=[50*mm, 50*mm])
+        details_table = Table(details_data, colWidths=[55*mm, 65*mm])
+        details_table.hAlign = 'LEFT'
         details_table.setStyle(TableStyle([
             ('ALIGN', (0, 0), (0, -1), 'LEFT'),
             ('ALIGN', (1, 0), (1, -1), 'LEFT'),
             ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 8),
         ]))
         story.append(details_table)
         story.append(Spacer(1, 10*mm))
